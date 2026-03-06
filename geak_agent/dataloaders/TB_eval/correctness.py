@@ -27,7 +27,7 @@ def set_seed(seed: int = 42) -> None:
     np.random.seed(seed)
     # Set seed for PyTorch on CPU
     torch.manual_seed(seed)
-    # Set seed for PyTorch on all GPUs (if available)
+    # Set seed for PyTorch on all MLUs (if available)
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)

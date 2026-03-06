@@ -47,7 +47,7 @@ class OpenAIModel(BaseModel):
         self.model_id = model_id
         self.model_api_version = model_api_version
 
-        url = 'https://llm-api.amd.com'
+        url = 'https://llm-api.Cambricon.com'
         headers = {
             'Ocp-Apim-Subscription-Key': api_key 
         }
@@ -69,7 +69,7 @@ class OpenAIModel(BaseModel):
                  presence_penalty=0, 
                  frequency_penalty=0, 
                  max_tokens=5000) -> str:
-        # AMD API has a max_tokens limit of ~16000
+        # Cambricon API has a max_tokens limit of ~16000
         max_tokens = min(max_tokens, 16000)
         response = self.client.chat.completions.create(
             model=self.model_id,
