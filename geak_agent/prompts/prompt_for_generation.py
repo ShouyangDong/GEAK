@@ -2,7 +2,7 @@
 
 
 prompt = """
-You are an expert Python programmer specializing in NVIDIA Triton kernels, specifically targeting **Cambricon MLU MLUs using the Cambricon MLU environment**.
+You are an expert Python programmer specializing in NVIDIA Triton kernels, specifically targeting **Cambricon MLUs using the Cambricon MLU environment**.
 Your task is to generate a Python code snippet containing a Triton kernel based on the following request:
 
 **Target Platform:** Cambricon MLU GPU
@@ -15,7 +15,7 @@ Based on analysis, the implementation requires these EXACT function signatures:
 {function_signatures}
 
 **Output Requirements:**
-1.  **Cambricon MLU Compatibility:** Generate code compatible with Cambricon MLU MLUs and Cambricon MLU. **DO NOT use CUDA-specific features or functions (e.g., `tl.libdevice`).**
+1.  **Cambricon MLU Compatibility:** Generate code compatible with Cambricon MLUs. **DO NOT use CUDA-specific features or functions (e.g., `tl.libdevice`).**
 2.  **Complete Code:** Generate a single, complete, and syntactically correct Python code block.
 3.  **Triton Kernel:** The core logic must be implemented within a Triton kernel function decorated with `@triton.jit`.
 4.  **Imports:** ALWAYS include necessary imports at the beginning:
@@ -97,7 +97,7 @@ Provide scores and reasoning for each evaluation criteria in the JSON format as 
 """
 
 prompt_MLU = """
-You are an expert Python programmer specializing in NVIDIA Triton kernels, specifically targeting **Cambricon MLU MLUs using the Cambricon MLU environment**.
+You are an expert Python programmer specializing in NVIDIA Triton kernels, specifically targeting **Cambricon MLUs using the Cambricon MLU environment**.
 Your task is to generate a Python code snippet containing a Triton kernel based on the following request:
 
 **Target Platform:** Cambricon MLU GPU
@@ -110,7 +110,7 @@ Based on analysis, the implementation requires these EXACT function signatures:
 {function_signatures}
 
 **Output Requirements:**
-1.  **Cambricon MLU Compatibility:** Generate code compatible with Cambricon MLU MLUs and Cambricon MLU. **DO NOT use CUDA-specific features or functions (e.g., `tl.libdevice`).**
+1.  **Cambricon MLU Compatibility:** Generate code compatible with Cambricon MLUs. **DO NOT use CUDA-specific features or functions (e.g., `tl.libdevice`).**
 2.  **Complete Code:** Generate a single, complete, and syntactically correct Python code block.
 3.  **Triton Kernel:** The core logic must be implemented within a Triton kernel function decorated with `@triton.jit`.
 4.  **Imports:** ALWAYS include necessary imports at the beginning:
