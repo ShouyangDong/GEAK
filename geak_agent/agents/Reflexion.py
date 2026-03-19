@@ -7,14 +7,13 @@ from geak_agent.memories.Memory import ReflexionMemory
 from geak_agent.models.Base import BaseModel
 
 
-
 class Reflexion(SequentialBaseAgent):
 
     def __init__(self, model: BaseModel, dataset):
         self.model = model
         self.dataset = dataset
         self.memories = self.memory_init()
-    
+
     def memory_init(self):
         return [ReflexionMemory(ps) for ps in self.dataset.problem_states]
 
@@ -26,10 +25,10 @@ class Reflexion(SequentialBaseAgent):
 
         if mem.ps.solution:
             text += f"\nPrevious attempt implementation:{mem.ps.solution}"
-        
+
         if mem.err_msg:
             text += f"\nTest messages for previous attempt:{mem.err_msg}"
-        
+
         if mem.reflection:
             text += f"\nReflection on previous attempt:{mem.reflection}"
 
@@ -49,17 +48,11 @@ class Reflexion(SequentialBaseAgent):
             reflect_txt = prompt_for_reflection.prompt.format(
                 problem=mem.ps.instruction,
                 solution=mem.ps.solution,
-                test_result=err_msg
+                test_result=err_msg,
             )
-            reflect_msg = [
-                {
-                    "role": "user",
-                    "content": reflect_txt
-                }
-            ]
+            reflect_msg = [{"role": "user", "content": reflect_txt}]
             mem.reflection = self.model.generate(reflect_msg)
         # else:
         #     mem.ps.pass_call = True
 
         return
-

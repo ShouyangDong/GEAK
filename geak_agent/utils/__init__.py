@@ -13,4 +13,3 @@ __all__ = [
     "extract_function_calls",
     "clear_json",
 ]
-

@@ -6,7 +6,11 @@ from loguru import logger
 import json
 from dataclasses import asdict
 from geak_agent.agents.Reflexion import Reflexion
-from geak_agent.utils.utils import extract_function_signatures, clear_code, extract_function_calls
+from geak_agent.utils.utils import (
+    extract_function_signatures,
+    clear_code,
+    extract_function_calls,
+)
 from geak_agent.prompts import prompt_for_reflection
 from geak_agent.memories.Memory import MemoryClassMeta
 from geak_agent.models.Base import BaseModel
@@ -15,10 +19,11 @@ from geak_agent.prompts import prompt_for_generation
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-
 class Reflexion_Oneshot(Reflexion):
 
-    def __init__(self, model: BaseModel, dataset, corpus_path, mem_file=None, descendant_num=1):
+    def __init__(
+        self, model: BaseModel, dataset, corpus_path, mem_file=None, descendant_num=1
+    ):
         self.model = model
         self.dataset = dataset
         self.memories = []
@@ -31,20 +36,28 @@ class Reflexion_Oneshot(Reflexion):
         self.memory_init(mem_file, descendant_num)
 
     def memory_init(self, mem_file=None, descendant_num=1):
-        class Memory(metaclass=MemoryClassMeta, field_names=["ps", 
-                                                             "err_msg", 
-                                                             "reflection", 
-                                                             "function_signatures", 
-                                                             "oneshot",
-                                                             "pass_call", 
-                                                            ]):
+        class Memory(
+            metaclass=MemoryClassMeta,
+            field_names=[
+                "ps",
+                "err_msg",
+                "reflection",
+                "function_signatures",
+                "oneshot",
+                "pass_call",
+            ],
+        ):
             pass
-        
+
         if mem_file is not None:
-            assert mem_file.endswith(".json"), f"expect a json file, but got {mem_file} instead"
+            assert mem_file.endswith(
+                ".json"
+            ), f"expect a json file, but got {mem_file} instead"
             with open(mem_file, "r") as f:
                 input_mems = json.load(f)
-            assert len(input_mems) == len(self.dataset), f"expect {len(self.dataset)} samples, but got {len(input_mems)} instead"
+            assert len(input_mems) == len(
+                self.dataset
+            ), f"expect {len(self.dataset)} samples, but got {len(input_mems)} instead"
 
         for ps in self.dataset.problem_states:
             if ps.label:
@@ -53,25 +66,35 @@ class Reflexion_Oneshot(Reflexion):
                 fs_mem = None
             if mem_file is None:
                 os_mem = self.instruction_retriever.query(ps.instruction)[0]
-                tmp_mem = Memory(ps=ps, 
-                                err_msg=None, 
-                                reflection=None, 
-                                function_signatures=fs_mem, 
-                                oneshot=os_mem["code"],
-                                pass_call=False,
-                                )
+                tmp_mem = Memory(
+                    ps=ps,
+                    err_msg=None,
+                    reflection=None,
+                    function_signatures=fs_mem,
+                    oneshot=os_mem["code"],
+                    pass_call=False,
+                )
             else:
                 input_mem = input_mems[ps.filename]
-                tmp_mem = Memory(ps=ps, 
-                                err_msg=input_mem["err_msg"], 
-                                reflection=input_mem["reflection"], 
-                                function_signatures=fs_mem, 
-                                oneshot=input_mem["oneshot"],
-                                pass_call=input_mem["pass_call"],
-                                )
+                tmp_mem = Memory(
+                    ps=ps,
+                    err_msg=input_mem["err_msg"],
+                    reflection=input_mem["reflection"],
+                    function_signatures=fs_mem,
+                    oneshot=input_mem["oneshot"],
+                    pass_call=input_mem["pass_call"],
+                )
             self.memories.append(tmp_mem)
 
-    def run(self, output_path=None, multi_thread=True, verbose=False, datalen=None, iteration_num=0, temperature=0):
+    def run(
+        self,
+        output_path=None,
+        multi_thread=True,
+        verbose=False,
+        datalen=None,
+        iteration_num=0,
+        temperature=0,
+    ):
         data_len = datalen if datalen else len(self.dataset)
         for iter in range(iteration_num):
             logger.info(f"\n=== Iteration {iter} ===")
@@ -81,23 +104,28 @@ class Reflexion_Oneshot(Reflexion):
 
             if multi_thread:
                 thread_num = 3
-            
+
             # generate solution
             logger.info(f"\ngenerate solution")
             with tqdm(total=data_len) as pbar:
                 if multi_thread:
-                    
+
                     with ThreadPoolExecutor(max_workers=thread_num) as executor:
-                        futures = {executor.submit(self.generate_solution, mem, temperature): mem for mem in self.memories[:data_len]}
+                        futures = {
+                            executor.submit(
+                                self.generate_solution, mem, temperature
+                            ): mem
+                            for mem in self.memories[:data_len]
+                        }
                         for future in as_completed(futures):
                             pbar.update(1)
                 else:
                     for mem in self.memories[:data_len]:
                         self.generate_solution(mem, temperature=temperature)
                         pbar.update(1)
-            
+
             # run scripts
-            logger.info(f"\nrun scripts on gpu")
+            logger.info(f"\nrun scripts on mlu")
             for mem in tqdm(self.memories[:data_len]):
                 if mem.pass_call:
                     continue
@@ -110,28 +138,30 @@ class Reflexion_Oneshot(Reflexion):
             with tqdm(total=data_len) as pbar:
                 if multi_thread:
                     with ThreadPoolExecutor(max_workers=thread_num) as executor:
-                        futures = {executor.submit(self.generate_reflexion, mem, temperature): mem for mem in self.memories[:data_len]}
+                        futures = {
+                            executor.submit(
+                                self.generate_reflexion, mem, temperature
+                            ): mem
+                            for mem in self.memories[:data_len]
+                        }
                         for future in as_completed(futures):
                             pbar.update(1)
                 else:
                     for mem in self.memories[:data_len]:
                         self.generate_reflexion(mem, temperature=temperature)
                         pbar.update(1)
-            
+
             if output_path is not None:
                 self.dataset.write_file(iter_path)
-                    
 
-    
     def generate_solution(self, mem, temperature=0):
         if mem.pass_call:
             return
-        
+
         tab = "\n"
         fss_text = "".join(f"* {sig}{tab}" for sig in mem.function_signatures)
         text = prompt_for_generation.prompt.format(
-            instruction=mem.ps.instruction,
-            function_signatures=fss_text
+            instruction=mem.ps.instruction, function_signatures=fss_text
         )
 
         if not mem.ps.solution:
@@ -140,11 +170,10 @@ class Reflexion_Oneshot(Reflexion):
             one_shot = self.code_retriever.query(mem.ps.solution)[0]["code"]
             text += f"\nHere is an example snippet of code: {one_shot}"
             text += f"\nPrevious attempt implementation:{mem.ps.solution}"
-            
-                  
+
         if mem.err_msg:
             text += f"\nTest messages for previous attempt:{mem.err_msg}"
-        
+
         if mem.reflection:
             text += f"\nReflection on previous attempt:{mem.reflection}"
 
@@ -157,20 +186,13 @@ class Reflexion_Oneshot(Reflexion):
 
         return
 
-
-
     def generate_reflexion(self, mem, temperature):
         if mem.pass_call:
             return
         reflect_txt = prompt_for_reflection.prompt.format(
             problem=mem.ps.instruction,
             solution=mem.ps.solution,
-            test_result=mem.err_msg
+            test_result=mem.err_msg,
         )
-        reflect_msg = [
-            {
-                "role": "user",
-                "content": reflect_txt
-            }
-        ]
+        reflect_msg = [{"role": "user", "content": reflect_txt}]
         mem.reflection = self.model.generate(reflect_msg, temperature=temperature)

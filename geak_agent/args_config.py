@@ -5,6 +5,7 @@ import yaml
 from argparse import Namespace
 from pathlib import Path
 
+
 def get_package_config_path(config_name: str) -> str:
     """Get the path to a config file within the package."""
     package_dir = Path(__file__).parent
@@ -14,15 +15,16 @@ def get_package_config_path(config_name: str) -> str:
     # Fall back to just the config name (assumes it's a full path)
     return config_name
 
+
 def load_config(yaml_path: str) -> Namespace:
     """Load configuration from a YAML file.
-    
+
     Args:
         yaml_path: Path to the YAML config file. Can be:
             - An absolute path
             - A relative path from the current directory
             - Just the config filename (will look in package configs directory)
-    
+
     Returns:
         Namespace object containing the configuration.
     """
@@ -39,7 +41,7 @@ def load_config(yaml_path: str) -> Namespace:
             config_path = yaml_path
     else:
         config_path = yaml_path
-    
-    with open(config_path, 'r') as f:
+
+    with open(config_path, "r") as f:
         config_dict = yaml.safe_load(f)
     return Namespace(**config_dict)

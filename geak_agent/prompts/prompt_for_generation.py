@@ -5,7 +5,7 @@ prompt = """
 You are an expert Python programmer specializing in NVIDIA Triton kernels, specifically targeting **Cambricon MLUs using the Cambricon MLU environment**.
 Your task is to generate a Python code snippet containing a Triton kernel based on the following request:
 
-**Target Platform:** Cambricon MLU GPU
+**Target Platform:** Cambricon MLU
 
 **Request:**
 {instruction}
@@ -100,7 +100,7 @@ prompt_MLU = """
 You are an expert Python programmer specializing in NVIDIA Triton kernels, specifically targeting **Cambricon MLUs using the Cambricon MLU environment**.
 Your task is to generate a Python code snippet containing a Triton kernel based on the following request:
 
-**Target Platform:** Cambricon MLU GPU
+**Target Platform:** Cambricon MLU
 
 **Request:**
 {instruction}

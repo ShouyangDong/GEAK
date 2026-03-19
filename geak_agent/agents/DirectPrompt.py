@@ -3,6 +3,7 @@
 from geak_agent.agents.Base import BaseAgent
 from geak_agent.utils.utils import clear_code
 
+
 class DirectPrompt(BaseAgent):
     def run_single_pass(self, mem, verbose=False):
         text = mem.ps.instruction
@@ -12,4 +13,3 @@ class DirectPrompt(BaseAgent):
         ]
         response = self.model.generate(msg)
         mem.ps.solution = clear_code(response)
-        
