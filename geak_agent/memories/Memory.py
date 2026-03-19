@@ -12,15 +12,18 @@ class MemoryClassMeta(type):
             annotations = {}
             for field in field_names:
                 annotations[field] = Any  # or a specific type
-            namespace['__annotations__'] = annotations
+            namespace["__annotations__"] = annotations
         clsobj = super().__new__(cls, name, bases, namespace)
         return dataclass(clsobj)  # Apply @dataclass dynamically
-    
+
+
 class BaseMemory(metaclass=MemoryClassMeta, field_names=["ps"]):
     pass
 
 
-class ReflexionMemory(metaclass=MemoryClassMeta, field_names=["ps", "err_msg", "reflection"]):
+class ReflexionMemory(
+    metaclass=MemoryClassMeta, field_names=["ps", "err_msg", "reflection"]
+):
     pass
 
 
@@ -31,4 +34,3 @@ class ReflexionMemory(metaclass=MemoryClassMeta, field_names=["ps", "err_msg", "
 # @dataclass
 # class OneshotMemory(BaseMemory):
 #     oneshot: Optional[str] = None
-

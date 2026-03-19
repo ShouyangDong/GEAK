@@ -14,6 +14,7 @@ from collections import namedtuple
 
 torch.set_printoptions(profile="full")
 
+
 def set_seed(seed: int = 42) -> None:
     """
     Set the random seed for reproducibility across multiple libraries and configure PyTorch for deterministic behavior.
@@ -35,7 +36,7 @@ def set_seed(seed: int = 42) -> None:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     # Set environment variable for hash-based operations
-    os.environ['PYTHONHASHSEED'] = str(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
 
 
 def import_variable_from_file(file_path, variable_name):
@@ -75,9 +76,10 @@ def import_variable_from_file(file_path, variable_name):
     # Retrieve the variable from the module
     return getattr(module, variable_name, None)
 
+
 def _compare(tri, pyt, fname, atol=1e-3, rtol=1e-3, verbose=False):
     if type(pyt) == np.ndarray:
-        if np.allclose(tri, pyt,  atol=atol, rtol=rtol):
+        if np.allclose(tri, pyt, atol=atol, rtol=rtol):
             if verbose:
                 print(f"PyTorch and Triton matched for file: {fname}")
             return True
@@ -87,7 +89,7 @@ def _compare(tri, pyt, fname, atol=1e-3, rtol=1e-3, verbose=False):
                 print(f"Test failed for file: {fname} with abs max diff: {diff}")
             return False
     elif type(pyt) == torch.Tensor:
-        if torch.allclose(tri, pyt,  atol=atol, rtol=rtol):
+        if torch.allclose(tri, pyt, atol=atol, rtol=rtol):
             if verbose:
                 print(f"PyTorch and Triton matched for file: {fname}")
             return True
@@ -107,6 +109,7 @@ def _compare(tri, pyt, fname, atol=1e-3, rtol=1e-3, verbose=False):
         return tri == pyt
     return None
 
+
 def compare(ref, gen, fname, atol=1e-3, rtol=1e-3, verbose=False):
     ret_val = True
     # import pdb; pdb.set_trace()
@@ -114,10 +117,18 @@ def compare(ref, gen, fname, atol=1e-3, rtol=1e-3, verbose=False):
         for tri, pyt in zip(ref, gen):
             ret_val &= compare(tri, pyt, fname)
     elif type(gen) == dict:
-        return compare( list(ref.values()), list(gen.values()), fname, atol=atol, rtol=rtol, verbose=verbose)
+        return compare(
+            list(ref.values()),
+            list(gen.values()),
+            fname,
+            atol=atol,
+            rtol=rtol,
+            verbose=verbose,
+        )
     else:
         ret_val &= _compare(ref, gen, fname, atol=atol, rtol=rtol, verbose=verbose)
     return ret_val
+
 
 def test_correctness(ref_file, gen_file, var_name, atol=1e-3, rtol=1e-3, verbose=False):
     fname = os.path.basename(gen_file)
@@ -126,11 +137,11 @@ def test_correctness(ref_file, gen_file, var_name, atol=1e-3, rtol=1e-3, verbose
     try:
         gen_result_golden = import_variable_from_file(gen_file, var_name)
         if verbose:
-            with open(gen_file+".out", "w") as f:
+            with open(gen_file + ".out", "w") as f:
                 f.write(f"file: {fname}\n")
                 json.dump(str(gen_result_golden), f)
                 f.write("\n\n\n")
-                f.write("#"*146)
+                f.write("#" * 146)
         gen_call_acc = True
     except Exception as e:
         gen_stderr = e
@@ -138,28 +149,49 @@ def test_correctness(ref_file, gen_file, var_name, atol=1e-3, rtol=1e-3, verbose
     try:
         ref_result_golden = import_variable_from_file(ref_file, var_name)
         if verbose:
-            with open(gen_file+".out_ref", "w") as f:
+            with open(gen_file + ".out_ref", "w") as f:
                 f.write(f"file: {fname}\n")
                 json.dump(str(ref_result_golden), f)
                 f.write("\n\n\n")
-                f.write("#"*146)
+                f.write("#" * 146)
         ref_call_acc = True
     except Exception as e:
         ref_stderr = e
         return gen_call_acc, None, None, ref_stderr
-    assert (ref_result_golden is not None), f'Reference output is None for file: {ref_file}'
-    assert (gen_result_golden is not None), f'Generated output is None for file: {gen_file}'
-    assert type(gen_result_golden) == type(ref_result_golden), f"Reference and Generated output results should be of the same type but generated is: {type(gen_result_golden)}, and reference is: {type(ref_result_golden)}"
+    assert (
+        ref_result_golden is not None
+    ), f"Reference output is None for file: {ref_file}"
+    assert (
+        gen_result_golden is not None
+    ), f"Generated output is None for file: {gen_file}"
+    assert type(gen_result_golden) == type(
+        ref_result_golden
+    ), f"Reference and Generated output results should be of the same type but generated is: {type(gen_result_golden)}, and reference is: {type(ref_result_golden)}"
     if gen_result_golden is None:
         return gen_call_acc, False, None, "Generated output is None"
     if ref_result_golden is None:
         return gen_call_acc, False, None, "Reference output is None"
     if type(gen_result_golden) != type(ref_result_golden):
-        return gen_call_acc, False, None, f"Reference and Generated output results should be of the same type but generated is: {type(gen_result_golden)}, and reference is: {type(ref_result_golden)}"
-    exec_acc = compare(ref_result_golden, gen_result_golden, fname, atol=atol, rtol=rtol, verbose=verbose)
+        return (
+            gen_call_acc,
+            False,
+            None,
+            f"Reference and Generated output results should be of the same type but generated is: {type(gen_result_golden)}, and reference is: {type(ref_result_golden)}",
+        )
+    exec_acc = compare(
+        ref_result_golden,
+        gen_result_golden,
+        fname,
+        atol=atol,
+        rtol=rtol,
+        verbose=verbose,
+    )
     if not exec_acc:
-        gen_stderr = f"Generated output does not match reference output for file: {fname}"
+        gen_stderr = (
+            f"Generated output does not match reference output for file: {fname}"
+        )
     return gen_call_acc, exec_acc, None, gen_stderr
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -172,7 +204,15 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 if __name__ == "__main__":
     args = parse_args()
-    gen_call_acc, exec_acc, stdout, gen_stderr = test_correctness(args.ref_file, args.gen_file, args.var_name, atol=args.atol, rtol=args.rtol, verbose=args.verbose)
+    gen_call_acc, exec_acc, stdout, gen_stderr = test_correctness(
+        args.ref_file,
+        args.gen_file,
+        args.var_name,
+        atol=args.atol,
+        rtol=args.rtol,
+        verbose=args.verbose,
+    )
     print(f"{gen_call_acc}*#*#{exec_acc}*#*#{stdout}*#*#{gen_stderr}")

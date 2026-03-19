@@ -7,4 +7,3 @@ __all__ = [
     "prompt_for_generation",
     "prompt_for_reflection",
 ]
-

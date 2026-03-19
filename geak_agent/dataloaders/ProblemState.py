@@ -13,6 +13,7 @@ class ProblemState:
     solution: Optional[str] = None
     speedup: float = 0.0
 
+
 @dataclass
 class ProblemStateMLU:
     instruction: str
@@ -25,6 +26,7 @@ class ProblemStateMLU:
     pass_call: bool = False
     pass_exe: bool = False
     speedup: float = 0.0
+
 
 @dataclass
 class tempCode:
@@ -41,4 +43,3 @@ class tempCode:
     eff: float = 0.0
     llm_metric: float = 0.0
     llm_eval: Optional[str] = None
-    

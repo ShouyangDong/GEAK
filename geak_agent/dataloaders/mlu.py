@@ -13,15 +13,17 @@ from tb_eval.evaluators.interface import get_evaluators
 from tb_eval.helpers.helper import extract_first_pytest_failure
 from tb_eval.perf.efficiency import get_perf_evaluators
 
+
 class MLU:
-    def __init__(self,
-                 statis_path,
-                 py_folder,
-                 instruction_path,
-                 log_root,
-                 py_interpreter='python3',
-                 result_path=None
-                 ):
+    def __init__(
+        self,
+        statis_path,
+        py_folder,
+        instruction_path,
+        log_root,
+        py_interpreter="python3",
+        result_path=None,
+    ):
         self.statis_path = statis_path
         self.py_folder = py_folder
         self.instruction_path = instruction_path
@@ -29,17 +31,19 @@ class MLU:
         self.MLU_tests = True
         self.problem_states = self.load_ps()
         self.log_root = log_root
-        
+
         # Initialize correctness and performance evaluators from tb_eval
         self.evaluator = get_evaluators["MLU"]()
         self.perf_evaluator = get_perf_evaluators["MLU"]()
         logger.info("Custom tests path set to: {}".format(self.py_folder))
 
-    def load_ps(self,):
+    def load_ps(
+        self,
+    ):
         problem_states = []
-        with open(self.instruction_path, "r", encoding='utf-8') as file:
+        with open(self.instruction_path, "r", encoding="utf-8") as file:
             instructions = json.load(file)
-        statis_data = json.loads(open(self.statis_path, 'r', encoding='utf-8').read())
+        statis_data = json.loads(open(self.statis_path, "r", encoding="utf-8").read())
 
         for line in instructions:
             instruction = line["instruction"]
@@ -52,20 +56,21 @@ class MLU:
                     file = item["file"]
                     tmp = item
                     break
-            if tmp: statis_data.remove(tmp)
-            
+            if tmp:
+                statis_data.remove(tmp)
+
             path = os.path.join(self.py_folder, file)
             assert os.path.exists(path), f"{file} not exist!"
-            test_code = open(path, "r", encoding="utf-8").read().split("#"*146)[-1]
-            assert "def test_" in  test_code, ""
+            test_code = open(path, "r", encoding="utf-8").read().split("#" * 146)[-1]
+            assert "def test_" in test_code, ""
 
             problemstate = ProblemStateMLU(
                 instruction=instruction,
-                label=label, 
-                test_code=test_code, 
+                label=label,
+                test_code=test_code,
                 filename=file,
                 opname=opname,
-                target_kernel_name=line.get("target_kernel_name", "")
+                target_kernel_name=line.get("target_kernel_name", ""),
             )
             problem_states.append(problemstate)
         return problem_states
@@ -76,19 +81,28 @@ class MLU:
     def write_file(self, file_path, start_idx=0, datalen=None):
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         data_len = datalen if datalen is not None else len(self)
-        with open(file_path, 'w') as f:
-            for ps in self.problem_states[start_idx:(start_idx + data_len)]:
+        with open(file_path, "w") as f:
+            for ps in self.problem_states[start_idx : (start_idx + data_len)]:
                 output = {
                     "instruction": ps.instruction,
                     "label": ps.label,
                     "file": ps.filename,
                     "target_kernel_name": ps.target_kernel_name,
                     "predict": ps.solution if ps.solution else "",
-                    "speedup": ps.speedup
+                    "speedup": ps.speedup,
                 }
                 f.write(json.dumps(output) + "\n")
 
-    def test_opt_correctness(self, code, filename, opname, tmp_dir="temp", save_scripts=True, exe_dir="pass_exe", gpu_id=0):
+    def test_opt_correctness(
+        self,
+        code,
+        filename,
+        opname,
+        tmp_dir="temp",
+        save_scripts=True,
+        exe_dir="pass_exe",
+        gpu_id=0,
+    ):
         tmp_dir = os.path.join(self.log_root, tmp_dir)
         os.makedirs(tmp_dir, exist_ok=True)
         exe_dir = os.path.join(self.log_root, exe_dir)
@@ -104,7 +118,17 @@ class MLU:
             exec_root_eval = os.path.abspath(os.path.join(tmp_dir, "exec_eval"))
             os.makedirs(exec_root_eval, exist_ok=True)
             # import pdb; pdb.set_trace()
-            call_status, exec_status, stdout, stderr = self.evaluator(code, log_root, exec_root_eval, filename, opname=opname, atol=1e-2, rtol=1e-2, custom_tests_path=self.py_folder, gpu_id=gpu_id)
+            call_status, exec_status, stdout, stderr = self.evaluator(
+                code,
+                log_root,
+                exec_root_eval,
+                filename,
+                opname=opname,
+                atol=1e-2,
+                rtol=1e-2,
+                custom_tests_path=self.py_folder,
+                gpu_id=gpu_id,
+            )
             # import ipdb;ipdb.set_trace(context=200)
             if exec_status and save_scripts:
                 # The evaluator already saves the file, but we copy it to the agent's expected directory
@@ -112,8 +136,7 @@ class MLU:
                 dst_file = os.path.join(exe_dir, opname)
                 if os.path.exists(src_file):
                     shutil.copy(src_file, dst_file)
-            
-            
+
             return bool(call_status), bool(exec_status), stdout, stderr, stdout, stderr
 
         except Exception as e:
@@ -132,18 +155,20 @@ class MLU:
         Args:
             exec_folder (str): The directory containing the correctly executed scripts.
             gen_perf_folder (str): The directory where performance JSON results will be stored.
-        
+
         Returns:
             dict: A dictionary containing performance results, mapping filename to metrics.
         """
-        logger.info(f"Starting MLU performance evaluation for kernels in: {exec_folder}")
+        logger.info(
+            f"Starting MLU performance evaluation for kernels in: {exec_folder}"
+        )
         try:
             # The `evaluate` method from PerformanceEvalMLU handles all the steps:
             # 1. Runs pytest for each file in exec_folder.
             # 2. Runs the final efficiency script.
             # 3. Parses and returns the results.
             try:
-                perf_results = self.perf_evaluator(exec_folder,gpu_id=gpu_id)
+                perf_results = self.perf_evaluator(exec_folder, gpu_id=gpu_id)
             except Exception as e:
                 logger.error(f"Performance evaluation failed: {e}")
                 return {}
