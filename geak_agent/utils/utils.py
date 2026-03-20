@@ -67,13 +67,13 @@ def clear_json(response):
 
     # Fall back to ast.literal_eval with preprocessing
     try:
-        json_str_clean = json_str.replace("\n", " ")
+        json_str_clean = json_str.replace("\n", "\\n")
         json_str_clean = re.sub(r"(\w)'(\w|\s)", r"\1\\'\2", json_str_clean)
         # Convert JSON keywords to Python
         json_str_clean = json_str_clean.replace("null", "None")
         json_str_clean = json_str_clean.replace("true", "True")
         json_str_clean = json_str_clean.replace("false", "False")
-        result = ast.literal_eval(json_str_clean)
+        result = json.loads(json_str_clean)
         return result
     except (SyntaxError, NameError, AttributeError, ValueError):
         return "ERR_SYNTAX"
