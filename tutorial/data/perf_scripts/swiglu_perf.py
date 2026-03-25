@@ -1,11 +1,22 @@
+# Copyright(C) [2025] Advanced Micro Devices, Inc. All rights reserved.
+
 import sys
 import os
+
+# Add current directory to path for generated kernel import
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Import reference kernel from kernels directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+KERNELS_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "kernels"))
+sys.path.insert(0, KERNELS_DIR)
+from swiglu import swiglu_wrapper as swiglu_wrapper_ref
+
+from performance_utils import Performance_Metrics, do_bench_config
+
 import torch
 import triton
-
-# 假设你的 FusedSwiglu 类在当前脚本中
-# from your_module import FusedSwiglu, naive_torch_swiglu
-
+import triton.language as tl
 
 class swiglu_performance_metrics(Performance_Metrics):
     def __init__(self, dtype=torch.bfloat16, is_backward=False, **kwargs):

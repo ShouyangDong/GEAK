@@ -1,16 +1,22 @@
+# Copyright(C) [2025] Advanced Micro Devices, Inc. All rights reserved.
+
 import sys
 import os
+
+# Add current directory to path for generated kernel import
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Import reference kernel from kernels directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+KERNELS_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "kernels"))
+sys.path.insert(0, KERNELS_DIR)
+from softmax import softmax_wrapper as softmax_wrapper_ref
+
+from performance_utils import Performance_Metrics, do_bench_config
+
 import torch
 import triton
 import triton.language as tl
-
-# 确保能导入你的性能工具基类
-# sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-# from performance_utils import Performance_Metrics, do_bench_config
-
-# 假设你的 softmax 实现已经按照之前的代码定义好
-# from softmax_example import softmax as softmax_mlu
-
 
 class softmax_performance_metrics(Performance_Metrics):
     def __init__(self, dtype=torch.float32, is_backward=False, **kwargs):

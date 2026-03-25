@@ -6,9 +6,6 @@ import os
 # Add current directory to path for generated kernel import
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Import generated kernel (will be copied to same dir as this script)
-from add_example import add_wrapper
-
 # Import reference kernel from kernels directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 KERNELS_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "kernels"))
