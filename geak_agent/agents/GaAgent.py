@@ -47,6 +47,7 @@ class GaAgent(Reflexion_Oneshot):
                 "raw_codes",
                 "call_candidate",
                 "exe_candidate",
+                "source_code",
                 "temp_strategy",
                 "perf_debug_num",
                 "pass_call",
@@ -88,6 +89,7 @@ class GaAgent(Reflexion_Oneshot):
                     raw_codes=raw_codes,
                     call_candidate=None,
                     exe_candidate=None,
+                    source_code=ps.label,
                     temp_strategy=None,
                     perf_debug_num=0,
                     pass_call=False,
@@ -237,7 +239,7 @@ class GaAgent(Reflexion_Oneshot):
                         pbar.update(1)
 
             # run scripts
-            logger.info(f"\nrun scripts on mlu")
+            logger.info(f"\nrun scripts on gpu")
             if output_path is not None:
                 root, extension = os.path.splitext(output_path)
                 tmp_dir = f"{root}_tmp"
@@ -278,7 +280,9 @@ class GaAgent(Reflexion_Oneshot):
                                 )
 
                         except Exception as e:
-                            print(f"failed to test the code for {mem.ps.filename}")
+                            print(
+                                f"failed to test the code for {mem.ps.filename} due to: {e}"
+                            )
                             raw_code.test_stdout = (
                                 f"failed to test the code due to: {e}"
                             )
@@ -322,9 +326,6 @@ class GaAgent(Reflexion_Oneshot):
                                 raw_code.profilig = stdout_analyze
                         mem.call_err_msg = raw_code.test_stdout
                         mem.exe_err_msg = raw_code.test_stderr
-                        print("++++++++++++++++++++++++++")
-                        print("[IFNO]*******speedup: ", speedup)
-                        print("[INFO]*******pass_exe: ", pass_exe)
                         if speedup > 0.0 and pass_exe:
                             raw_code.pass_perf = True
                             mem.pass_perf = True
@@ -363,11 +364,7 @@ class GaAgent(Reflexion_Oneshot):
                             mem.history[i], key=lambda x: x.llm_metric, reverse=True
                         )
                         mem.history[i] = codes_sorted[:5]
-                        print("==========================")
-                        print("[IFNO]*******pass perf: ", raw_code.pass_perf)
-                        print("[INFO]*******strategy: ", raw_code.strategy)
                         if raw_code.pass_perf and raw_code.strategy:
-
                             raw_code.strategy = None
                             self.update_perf_candidates(
                                 mem=mem, raw_code=raw_code, ancestor_num=ancestor_num
@@ -386,10 +383,10 @@ class GaAgent(Reflexion_Oneshot):
                 self.dataset.write_file(iter_path)
                 self.write_memories(mem_output_path)
 
-            os.system(f"rm -rf {exe_dir}")
-            os.system(f"rm -rf {perf_result_dir}")
-            os.system(f"rm -rf {perf_log_dir}")
-            os.system(f"rm -rf {tmp_dir}")
+            # os.system(f'rm -rf {exe_dir}')
+            # os.system(f'rm -rf {perf_result_dir}')
+            # os.system(f'rm -rf {perf_log_dir}')
+            # os.system(f'rm -rf {tmp_dir}')
 
     def generate_solution(self, mem, temperature=0, descendant_num=1, mutation=False):
 
@@ -421,11 +418,15 @@ class GaAgent(Reflexion_Oneshot):
             else:
                 text += "\nAnalyze and compare all optimization strategies based on Optimized Implementation codes and give a better strategy motivated by them. Based on the better strategy generate a better optimization code to get a higher speedup."
         else:
-            if not mem.exe_candidate and not mem.call_candidate and not mem.raw_codes:
-                text += f"\nHere is an example snippet of code:\n {mem.oneshot}"
-            elif mem.raw_codes:
-                one_shot = self.code_retriever.query(mem.raw_codes[0].code)[0]["code"]
-                text += f"\nHere is an example snippet of code:\n {one_shot}"
+            # TODO (add one shot example)
+            # if not mem.exe_candidate and not mem.call_candidate and not mem.raw_codes:
+            #    print("===============one shot==============")
+            #    text += f"\nHere is an example snippet of code:\n {mem.oneshot}"
+            # elif mem.raw_codes:
+            #    one_shot = self.code_retriever.query(mem.raw_codes[0].code)[0]["code"]
+            #    print("[INFO]one shot: ", one_shot)
+            #    text += f"\nHere is an example snippet of code:\n {one_shot}"
+            text += f"\Here is the source code which you need to transform: \n {mem.source_code}"
 
         if mem.raw_codes:
             # Extend history if descendant_num increased since initialization

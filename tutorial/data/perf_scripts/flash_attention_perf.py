@@ -21,11 +21,13 @@ import triton.language as tl
 
 class flash_attention_performance_metrics(Performance_Metrics):
     def __init__(self, dtype=torch.float16, is_backward=False, **kwargs):
-        super().__init__("flash_attention", dtype=dtype, is_backward=is_backward, **kwargs)
+        super().__init__(
+            "flash_attention", dtype=dtype, is_backward=is_backward, **kwargs
+        )
         self.head_q = 32
-        self.head_kv = 32 # 可以修改为 GQA/MQA 模式进行测试
+        self.head_kv = 32  # 可以修改为 GQA/MQA 模式进行测试
         self.dim = 64
-        self.scale = 1.0 / (self.dim ** 0.5)
+        self.scale = 1.0 / (self.dim**0.5)
 
     def get_input_tensors(self):
         """
@@ -38,17 +40,34 @@ class flash_attention_performance_metrics(Performance_Metrics):
             q = torch.randn((batch * seq_len, self.head_q, self.dim), dtype=self.dtype)
             k = torch.randn((batch * seq_len, self.head_kv, self.dim), dtype=self.dtype)
             v = torch.randn((batch * seq_len, self.head_kv, self.dim), dtype=self.dtype)
-            
+
             # 构造 Flash Attention 专用的辅助张量
-            cu_seqlens = torch.arange(0, (batch + 1) * seq_len, seq_len, dtype=torch.int32)
+            cu_seqlens = torch.arange(
+                0, (batch + 1) * seq_len, seq_len, dtype=torch.int32
+            )
             # 模拟简单的 mask 参数，attn_arg 这里填 0 (全序列)
             q_attn_arg = torch.zeros(batch * seq_len, dtype=torch.int32)
             k_attn_arg = torch.zeros(batch * seq_len, dtype=torch.int32)
-            
-            args = (q, k, v, q_attn_arg, k_attn_arg, cu_seqlens, cu_seqlens, seq_len, seq_len, self.scale, 1, False)
-            
+
+            args = (
+                q,
+                k,
+                v,
+                q_attn_arg,
+                k_attn_arg,
+                cu_seqlens,
+                cu_seqlens,
+                seq_len,
+                seq_len,
+                self.scale,
+                1,
+                False,
+            )
+
             if self.is_backward:
-                do = torch.randn((batch * seq_len, self.head_q, self.dim), dtype=self.dtype)
+                do = torch.randn(
+                    (batch * seq_len, self.head_q, self.dim), dtype=self.dtype
+                )
                 self.input_tensors.append((*args, do))
             else:
                 self.input_tensors.append(args)
@@ -57,7 +76,9 @@ class flash_attention_performance_metrics(Performance_Metrics):
         """搬运至加速器"""
         # 你的环境可能是 CUDA 或 MLU，这里根据 context 自动选择
         device = "cuda" if torch.cuda.is_available() else "mlu"
-        tensors = [t.to(device) if isinstance(t, torch.Tensor) else t for t in input_tuple]
+        tensors = [
+            t.to(device) if isinstance(t, torch.Tensor) else t for t in input_tuple
+        ]
         if self.is_backward:
             # 激活 QKV 的梯度
             for t in tensors[:3]:
@@ -78,19 +99,21 @@ class flash_attention_performance_metrics(Performance_Metrics):
         参考实现：标准的 Causal Attention 逻辑。
         注意：原生实现对于长序列会 OOM，测试时请注意 seq_len 上限。
         """
-        q, k, v, _, _, cu_q, cu_k, max_q, max_k, scale, mask_type, sparse = input_tuple[:12]
+        q, k, v, _, _, cu_q, cu_k, max_q, max_k, scale, mask_type, sparse = input_tuple[
+            :12
+        ]
         # 这里仅实现简化的单 batch 逻辑作为参考
-        q = q.transpose(0, 1) # [H, L, D]
+        q = q.transpose(0, 1)  # [H, L, D]
         k = k.transpose(0, 1)
         v = v.transpose(0, 1)
-        
+
         attn = torch.matmul(q, k.transpose(-2, -1)) * scale
         # 简单模拟 causal mask
         mask = torch.triu(torch.ones(max_q, max_k, device=q.device), diagonal=1).bool()
-        attn = attn.masked_fill(mask, float('-inf'))
+        attn = attn.masked_fill(mask, float("-inf"))
         p = torch.softmax(attn, dim=-1)
         o = torch.matmul(p, v)
-        
+
         if self.is_backward:
             do = input_tuple[12]
             return torch.autograd.backward(o, do.transpose(0, 1), retain_graph=True)
@@ -102,16 +125,16 @@ class flash_attention_performance_metrics(Performance_Metrics):
         Attention 的计算量公式约为：2 * L^2 * H * D (包含 QK^2 和 PV 两次大矩阵乘)
         """
         q = input_tuple[0]
-        L = input_tuple[7] # max_seqlen_q
+        L = input_tuple[7]  # max_seqlen_q
         H = self.head_q
         D = self.dim
-        
+
         # 前向计算量：QK^T (2L^2HD) + Softmax (忽略) + PV (2L^2HD)
         flops = 4 * L**2 * H * D
         if self.is_backward:
             # 反向计算量约为前向的 2.5 到 3 倍
             flops *= 2.5
-            
+
         return flops / (runtime / 1000) / 1e12
 
     def get_gbps(self, input_tuple, runtime):
@@ -123,6 +146,7 @@ class flash_attention_performance_metrics(Performance_Metrics):
         # 读 Q, K, V + 写 O
         total_bytes = (q.numel() + k.numel() + v.numel() + q.numel()) * q.element_size()
         return total_bytes / (runtime / 1000) / 1e9
+
 
 if __name__ == "__main__":
     # 测试前向

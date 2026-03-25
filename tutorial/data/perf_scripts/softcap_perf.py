@@ -18,6 +18,7 @@ import torch
 import triton
 import triton.language as tl
 
+
 class softcap_performance_metrics(Performance_Metrics):
     def __init__(self, dtype=torch.float16, is_backward=False, **kwargs):
         super().__init__("softcap", dtype=dtype, is_backward=is_backward, **kwargs)
