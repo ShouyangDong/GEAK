@@ -1,8 +1,22 @@
+# Copyright(C) [2025] Advanced Micro Devices, Inc. All rights reserved.
+
+import sys
+import os
+
+# Add current directory to path for generated kernel import
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Import reference kernel from kernels directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+KERNELS_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "kernels"))
+sys.path.insert(0, KERNELS_DIR)
+from softcap import softcap_wrapper as softcap_wrapper_ref
+
+from performance_utils import Performance_Metrics, do_bench_config
+
 import torch
 import triton
-
-# 假设 Softcap 类 (torch.autograd.Function) 已在上下文中定义
-
+import triton.language as tl
 
 class softcap_performance_metrics(Performance_Metrics):
     def __init__(self, dtype=torch.float16, is_backward=False, **kwargs):

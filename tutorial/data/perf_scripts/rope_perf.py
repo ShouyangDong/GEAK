@@ -1,16 +1,23 @@
+# Copyright(C) [2025] Advanced Micro Devices, Inc. All rights reserved.
+
 import sys
 import os
-import torch
-import triton
 
-# 假设你的 rope 实现保存在 rope_example.py 中
-# from rope_example import rope_impl
-
-# 如果是在同一个文件里，直接使用即可。为了适配你的目录结构，这里保留 path 插入逻辑
+# Add current directory to path for generated kernel import
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# 导入性能评估工具基类
-# from performance_utils import Performance_Metrics
+
+# Import reference kernel from kernels directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+KERNELS_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "kernels"))
+sys.path.insert(0, KERNELS_DIR)
+from rope_example import rope_wrapper as rope_wrapper_ref
+
+from performance_utils import Performance_Metrics, do_bench_config
+
+import torch
+import triton
+import triton.language as tl
 
 
 class rope_performance_metrics(Performance_Metrics):
