@@ -22,28 +22,30 @@ INSTRUCTIONS_FILE = os.path.join(TUTORIAL_DIR, "data", "instructions.json")
 import re
 import ast
 
+
 def process_code(code):
     if "```python" in code:
         code = code.split("```python")[-1].split("```")[0]
     code = code.replace("<|im_end|>", "").replace("<|EOT|>", "")
-    
-    code = code.replace('\xa0', ' ')
 
-    keywords = r'import|from|def|class|for|return|if|elif'
-    code = re.sub(rf'\b({keywords})(?=[a-zA-Z])', r'\1 ', code)
+    code = code.replace("\xa0", " ")
 
-    code = re.sub(r'\bas(?=[a-zA-Z])(?!(sert|ync))', r'as ', code)
+    keywords = r"import|from|def|class|for|return|if|elif"
+    code = re.sub(rf"\b({keywords})(?=[a-zA-Z])", r"\1 ", code)
 
-    code = re.sub(r'(?<!\n)\b(import\s+|from\s+|def\s+|class\s+)', r'\n\1', code)
-    code = re.sub(r'(?<!\n)\s*(@[a-zA-Z_][a-zA-Z0-9_\.]*)', r'\n\1', code)
-    
+    code = re.sub(r"\bas(?=[a-zA-Z])(?!(sert|ync))", r"as ", code)
+
+    code = re.sub(r"(?<!\n)\b(import\s+|from\s+|def\s+|class\s+)", r"\n\1", code)
+    code = re.sub(r"(?<!\n)\s*(@[a-zA-Z_][a-zA-Z0-9_\.]*)", r"\n\1", code)
+
     def space_to_newline(match):
-        return '\n' + match.group(0)
-    code = re.sub(r' {3,}', space_to_newline, code)
+        return "\n" + match.group(0)
+
+    code = re.sub(r" {3,}", space_to_newline, code)
 
     try:
         tree = ast.parse(code)
-        
+
         imports = []
         functions = []
 
@@ -56,7 +58,7 @@ def process_code(code):
         return "\n".join(imports) + "\n\n" + "\n\n".join(functions)
 
     except SyntaxError as e:
-        error_line = code.split('\n')[e.lineno - 1] if e.lineno else "未知"
+        error_line = code.split("\n")[e.lineno - 1] if e.lineno else "未知"
         print(f"❌ AST 解析彻底失败: 第 {e.lineno} 行 -> {e.msg}")
         print(f"❌ 导致崩溃的代码片段: {error_line.strip()}")
         return code.strip()

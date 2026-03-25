@@ -622,7 +622,9 @@ class FusedSwiglu(torch.autograd.Function):
         return dx, dw_g, dw_fc, db_g, db_fc, None, None
 
 
-if __name__ == "__main__":
+##################################################################################################################################################
+def test_swiglu_triton():
+    results = {}
     dtype = torch.bfloat16
     x = torch.randn((220000, 512), dtype=dtype, device="cuda").requires_grad_()
     w_g = torch.randn((512, 1024), dtype=dtype, device="cuda").requires_grad_()
@@ -653,27 +655,15 @@ if __name__ == "__main__":
     print(diff(torch_db_fc, triton_db_fc))
     atol = 1e-2
     rtol = 1e-2
-    if torch.allclose(y, ref, atol=atol, rtol=rtol):
-        print("✅ [Fwd]Triton and Torch match")
-    else:
-        print("❌ [Fwd]Triton and Torch differ")
-    if torch.allclose(triton_dx, torch_dx, atol=atol, rtol=rtol):
-        print("✅ [Bwd X]Triton and Torch match")
-    else:
-        print("❌ [Bwd X]Triton and Torch differ")
-    if torch.allclose(triton_dw_g, torch_dw_g, atol=atol, rtol=rtol):
-        print("✅ [Bwd WG]Triton and Torch match")
-    else:
-        print("❌ [Bwd WG]Triton and Torch differ")
-    if torch.allclose(triton_dw_fc, torch_dw_fc, atol=atol, rtol=rtol):
-        print("✅ [Bwd WFC]Triton and Torch match")
-    else:
-        print("❌ [Bwd WFC]Triton and Torch differ")
-    if torch.allclose(triton_db_g, torch_db_g, atol=atol, rtol=rtol):
-        print("✅ [Bwd BG]Triton and Torch match")
-    else:
-        print("❌ [Bwd BG]Triton and Torch differ")
-    if torch.allclose(triton_db_fc, torch_db_fc, atol=atol, rtol=rtol):
-        print("✅ [Bwd BFC]Triton and Torch match")
-    else:
-        print("❌ [Bwd BFC]Triton and Torch differ")
+    results["test_case_1"] = {
+        "y": y,
+        "triton_dx": triton_dx,
+        "triton_dw_g": triton_dw_g,
+        "triton_dw_fc": triton_dw_fc,
+        "triton_db_g": triton_db_g,
+        "triton_db_fc": triton_db_fc,
+    }
+    return results
+
+
+result_gold = test_swiglu_triton()

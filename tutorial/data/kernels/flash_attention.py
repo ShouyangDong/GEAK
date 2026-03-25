@@ -836,3 +836,56 @@ class FlashAttentionFunc(torch.autograd.Function):
             dk = dk.reshape(ctx.k_len, ctx.kv_head, head_group, ctx.qk_dim).sum(2)
             dv = dv.reshape(ctx.k_len, ctx.kv_head, head_group, ctx.v_dim).sum(2)
         return (dq, dk, dv) + (None,) * 9
+
+
+##################################################################################################################################################
+def test_flash_attention():
+    results = {}
+    batch_size = 4
+    q_len = 1024
+    k_len = 1024
+    q_head = 16
+    kv_head = 16
+    qk_dim = 64
+    v_dim = 64
+    max_seqlen_q = 1024
+    max_seqlen_k = 1024
+    scale = 1 / (qk_dim**0.5)
+    mask_fn = 1
+    sparse_opt = 0
+
+    q = torch.randn(q_len, q_head, qk_dim, device="cuda", dtype=torch.float16)
+    k = torch.randn(k_len, kv_head, qk_dim, device="cuda", dtype=torch.float16)
+    v = torch.randn(k_len, kv_head, v_dim, device="cuda", dtype=torch.float16)
+    q_attn_arg = torch.arange(q_len, device="cuda") // 64 % 4
+    k_attn_arg = torch.arange(k_len, device="cuda") // 64 % 4
+    cu_seqlens_q = torch.arange(batch_size + 1, device="cuda") * (q_len // batch_size)
+    cu_seqlens_k = torch.arange(batch_size + 1, device="cuda") * (k_len // batch_size)
+
+    o = FlashAttentionFunc.apply(
+        q,
+        k,
+        v,
+        q_attn_arg,
+        k_attn_arg,
+        cu_seqlens_q,
+        cu_seqlens_k,
+        max_seqlen_q,
+        max_seqlen_k,
+        scale,
+        mask_fn,
+        sparse_opt,
+    )
+    do = torch.randn_like(o)
+    o.sum().backward()
+    results["test_case_1"] = {
+        "o": o,
+        "do": do,
+        "dq": q.grad,
+        "dk": k.grad,
+        "dv": v.grad,
+    }
+    return results
+
+
+result_gold = test_flash_attention()
