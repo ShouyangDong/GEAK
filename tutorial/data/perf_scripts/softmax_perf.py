@@ -18,6 +18,7 @@ import torch
 import triton
 import triton.language as tl
 
+
 class softmax_performance_metrics(Performance_Metrics):
     def __init__(self, dtype=torch.float32, is_backward=False, **kwargs):
         super().__init__(

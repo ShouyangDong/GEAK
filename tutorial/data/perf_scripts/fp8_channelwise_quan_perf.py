@@ -10,7 +10,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 KERNELS_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "kernels"))
 sys.path.insert(0, KERNELS_DIR)
-from fp8_channelwise_quan import fp8_channelwise_quan_wrapper as fp8_channelwise_quan_wrapper_ref
+from fp8_channelwise_quan import (
+    fp8_channelwise_quan_wrapper as fp8_channelwise_quan_wrapper_ref,
+)
 
 from performance_utils import Performance_Metrics, do_bench_config
 

@@ -80,6 +80,9 @@ def run_geak_optimization(
         final_model_id = model_id
         provider_name = "OpenAI"
 
+    # if not final_api_key:
+    #    raise ValueError("❌ API Key 缺失。请使用 --api-key 参数或设置环境变量 OPENAI_API_KEY。")
+
     if verbose:
         print(f"✓ API: {provider_name} | Model: {final_model_id}")
 
@@ -219,7 +222,7 @@ def main():
     parser.add_argument(
         "--api-key",
         type=str,
-        default="XXX",
+        default="XXXX",
         help="API Key (如果不传，将读取环境变量 OPENAI_API_KEY)",
     )
     parser.add_argument(

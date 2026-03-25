@@ -36,10 +36,10 @@ class matmul_performance_metrics(Performance_Metrics):
             M, N, K = size, size, size
             a = torch.randn((M, K), dtype=self.dtype)
             b = torch.randn((K, N), dtype=self.dtype)
-            
+
             # matmul 包装函数接受 (a, b, activation)
-            args = (a, b, "") 
-            
+            args = (a, b, "")
+
             if self.is_backward:
                 # 如果要测反向传播，需要准备 grad_output (do)
                 # 注：你提供的代码仅包含 fwd，此处为反向框架预留
@@ -52,8 +52,11 @@ class matmul_performance_metrics(Performance_Metrics):
         """搬运至加速器并确保连续性（Kernel 要求）"""
         device = "mlu" if torch.mlu.is_available() else "cuda"
         # Matmul Kernel 显式要求输入连续
-        tensors = [t.to(device).contiguous() if isinstance(t, torch.Tensor) else t for t in input_tuple]
-        
+        tensors = [
+            t.to(device).contiguous() if isinstance(t, torch.Tensor) else t
+            for t in input_tuple
+        ]
+
         if self.is_backward:
             tensors[0].requires_grad_()
             tensors[1].requires_grad_()
@@ -91,12 +94,12 @@ class matmul_performance_metrics(Performance_Metrics):
         a, b = input_tuple[0], input_tuple[1]
         M, K = a.shape
         _, N = b.shape
-        
+
         flops = 2 * M * N * K
         if self.is_backward:
             # 矩阵乘法反向传播包含两个矩阵乘法 (dA = dC @ B^T, dB = A^T @ dC)
             flops *= 2
-            
+
         return flops / (runtime / 1000) / 1e12
 
     def get_gbps(self, input_tuple, runtime):
@@ -107,10 +110,11 @@ class matmul_performance_metrics(Performance_Metrics):
         a, b = input_tuple[0], input_tuple[1]
         M, K = a.shape
         _, N = b.shape
-        
+
         # 读 A, B + 写 C
         total_bytes = (M * K + K * N + M * N) * a.element_size()
         return total_bytes / (runtime / 1000) / 1e9
+
 
 if __name__ == "__main__":
     # 执行性能评测
