@@ -131,7 +131,9 @@ class Softcap(torch.autograd.Function):
         return dx, None
 
 
-if __name__ == "__main__":
+##################################################################################################################################################
+def test_softcap_triton():
+    results = {}
     dtype = torch.float16
     softcap = 50.0
     x = torch.randn((1024, 1024), dtype=dtype, device="mlu").requires_grad_()
@@ -139,17 +141,11 @@ if __name__ == "__main__":
     dy = torch.randn_like(y)
     y.backward(dy)
     triton_dx, x.grad = x.grad.clone(), None
+    results["test_case_1"] = {
+        "triton_dx": triton_dx,
+        "y": y,
+    }
+    return results
 
-    ref = softcap * torch.tanh(x.to(torch.float32) / softcap).to(dtype)
-    ref.backward(dy)
-    torch_dx, x.grad = x.grad.clone(), None
-    atol = 1e-3
-    rtol = 1e-3
-    if torch.allclose(y, ref, atol=atol, rtol=rtol):
-        print("✅ [Fwd]Triton and Torch match")
-    else:
-        print("❌ [Fwd]Triton and Torch differ")
-    if torch.allclose(triton_dx, torch_dx, atol=atol, rtol=rtol):
-        print("✅ [Bwd]Triton and Torch match")
-    else:
-        print("❌ [Bwd]Triton and Torch differ")
+
+result_gold = test_softcap_triton()

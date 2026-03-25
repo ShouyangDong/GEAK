@@ -297,3 +297,21 @@ def channel_granul_fp8_quant(
     )
 
     return y, reciprocal_scale
+
+
+##################################################################################################################################################
+def test_channel_granul_fp8_quant():
+    results = {}
+    B, M, N = 80, 256, 640
+    x = torch.randn((B, M, N), dtype=torch.float16, device="mlu")
+    y, reciprocal_scale = channel_granul_fp8_quant(
+        x, torch.float8_e4m3, axiswise_dim=-1
+    )
+    results["test_case_1"] = {
+        "y": y,
+        "reciprocal_scale": reciprocal_scale,
+    }
+    return results
+
+
+result_gold = test_channel_granul_fp8_quant()

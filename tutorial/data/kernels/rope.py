@@ -193,6 +193,10 @@ if __name__ == "__main__":
             st += [y]
         return torch.cat(st)
 
+
+##################################################################################################################################################
+def test_rope_triton():
+    results = {}
     MAX_LEN = 100
     BS = 100
     HEAD = 8
@@ -207,13 +211,8 @@ if __name__ == "__main__":
         pos += [torch.arange(sz)]
     pos = torch.cat(pos)
     v = rope_impl(input, pos, offset, MAX_LEN, base=2.0)
+    results["test_case_1"] = v
+    return results
 
-    pad_input = pad(input, size, MAX_LEN)
 
-    rope = RotaryPositionalEmbeddings(DIM, base=2)
-    roped = rope(pad_input.transpose(0, 1)).transpose(0, 1)
-    unpad_rope = unpad(roped, size)
-    print(unpad_rope)
-    print(v)
-    print(torch.allclose(unpad_rope, v))
-    print(torch.abs(unpad_rope - v).max())
+result_gold = test_rope_triton()
