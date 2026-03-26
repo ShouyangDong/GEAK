@@ -50,7 +50,7 @@ class swiglu_performance_metrics(Performance_Metrics):
     def to_mlu(self, input_tensor):
         """搬运至加速器，并设置 grad 标志"""
         tensors = [
-            t.to("cuda") if isinstance(t, torch.Tensor) else t for t in input_tensor
+            t.to("mlu") if isinstance(t, torch.Tensor) else t for t in input_tensor
         ]
         if self.is_backward:
             # 激活 grad
@@ -63,11 +63,11 @@ class swiglu_performance_metrics(Performance_Metrics):
         if self.is_backward:
             x, w_g, w_fc, b_g, b_fc, dy = input_tensor
             # 这里的 is_recompute 参数根据你的 FusedSwiglu 定义传入
-            y = FusedSwiglu.apply(x, w_g, w_fc, b_g, b_fc, True, False)
+            y = swiglu_wrapper_ref.apply(x, w_g, w_fc, b_g, b_fc, True, False)
             return torch.autograd.backward(y, dy, retain_graph=True)
         else:
             x, w_g, w_fc, b_g, b_fc = input_tensor
-            return FusedSwiglu.apply(x, w_g, w_fc, b_g, b_fc, False, False)
+            return swiglu_wrapper_ref.apply(x, w_g, w_fc, b_g, b_fc, False, False)
 
     def call_op_ref(self, input_tensor):
         """执行 PyTorch 原生算子（未融合）"""
@@ -128,14 +128,12 @@ class swiglu_performance_metrics(Performance_Metrics):
 
 
 if __name__ == "__main__":
-    # 测试前向性能
     print("Testing Forward Performance...")
     fwd_perf = swiglu_performance_metrics(is_backward=False)
     fwd_perf.get_input_tensors()
     fwd_perf.get_do_bench_config(warmup=50, rep=100)
     fwd_perf.run_benchmark()
 
-    # 测试反向性能
     print("\nTesting Backward Performance...")
     bwd_perf = swiglu_performance_metrics(is_backward=True)
     bwd_perf.get_input_tensors()

@@ -53,14 +53,14 @@ class fp8_quant_performance_metrics(Performance_Metrics):
 
     def to_mlu(self, input_tuple):
         """搬运至加速器"""
-        device = "mlu" if torch.mlu.is_available() else "cuda"
+        device = "mlu"
         # x, dtype, axiswise_dim
         x = input_tuple[0].to(device)
         return (x, input_tuple[1], input_tuple[2])
 
     def call_op(self, input_tuple):
         """调用 Triton 版量化内核"""
-        return channel_granul_fp8_quant(*input_tuple)
+        return fp8_channelwise_quan_wrapper_ref(*input_tuple)
 
     def call_op_ref(self, input_tuple):
         """参考实现：PyTorch 原生逻辑"""
@@ -115,6 +115,5 @@ class fp8_quant_performance_metrics(Performance_Metrics):
 if __name__ == "__main__":
     perf = fp8_quant_performance_metrics()
     perf.get_input_tensors()
-    # 启用 Autotune，测量最稳健的性能
     perf.get_do_bench_config(warmup=50, rep=200)
     perf.run_benchmark()

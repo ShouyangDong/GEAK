@@ -31,7 +31,6 @@ class softmax_performance_metrics(Performance_Metrics):
         Softmax 通常受列数（N）影响较大，因为 N 决定了 BLOCK_SIZE 和 SRAM 占用。
         """
         self.input_tensors = []
-        # 固定行数 M=4096，改变列数 N
         M = 4096
         for i in range(10, 15):  # N 从 1024 到 16384
             N = 2**i
@@ -44,7 +43,7 @@ class softmax_performance_metrics(Performance_Metrics):
 
     def call_op(self, input_tensor):
         """调用你实现的 Triton Softmax"""
-        return softmax(input_tensor)
+        return softmax_wrapper_ref(input_tensor)
 
     def call_op_ref(self, input_tensor):
         """调用 PyTorch 原生 Softmax 作为参考"""
@@ -56,7 +55,6 @@ class softmax_performance_metrics(Performance_Metrics):
         对于 Fused Softmax，理论访存量为：读取 MN + 写入 MN。
         """
         x = input_tensor
-        # 总访存字节数：读一次 + 写一次
         total_bytes = 2 * x.numel() * x.element_size()
         GBPS = total_bytes / (runtime / 1000) / 1e9
         return GBPS
@@ -67,7 +65,6 @@ class softmax_performance_metrics(Performance_Metrics):
         Softmax 操作包含：减法(1)、指数(1)、求和(1)、除法(1)，每个元素约 4~10 FLOPS。
         """
         x = input_tensor
-        # 粗略估算每个元素的浮点操作数
         FLOPS_PER_ELEMENT = 8
         total_flops = x.numel() * FLOPS_PER_ELEMENT
         TFLOPS = total_flops / (runtime / 1000) / 1e12
@@ -75,10 +72,7 @@ class softmax_performance_metrics(Performance_Metrics):
 
 
 if __name__ == "__main__":
-    # 创建性能评估实例
     op_perf = softmax_performance_metrics(dtype=torch.float32)
     op_perf.get_input_tensors()
-    # 设置预热和重复次数
     op_perf.get_do_bench_config(warmup=100, rep=1000)
-    # 运行并打印结果
     op_perf.run_benchmark()

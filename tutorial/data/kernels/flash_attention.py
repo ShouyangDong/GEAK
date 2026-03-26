@@ -854,13 +854,13 @@ def test_flash_attention():
     mask_fn = 1
     sparse_opt = 0
 
-    q = torch.randn(q_len, q_head, qk_dim, device="cuda", dtype=torch.float16)
-    k = torch.randn(k_len, kv_head, qk_dim, device="cuda", dtype=torch.float16)
-    v = torch.randn(k_len, kv_head, v_dim, device="cuda", dtype=torch.float16)
-    q_attn_arg = torch.arange(q_len, device="cuda") // 64 % 4
-    k_attn_arg = torch.arange(k_len, device="cuda") // 64 % 4
-    cu_seqlens_q = torch.arange(batch_size + 1, device="cuda") * (q_len // batch_size)
-    cu_seqlens_k = torch.arange(batch_size + 1, device="cuda") * (k_len // batch_size)
+    q = torch.randn(q_len, q_head, qk_dim, device="mlu", dtype=torch.float16)
+    k = torch.randn(k_len, kv_head, qk_dim, device="mlu", dtype=torch.float16)
+    v = torch.randn(k_len, kv_head, v_dim, device="mlu", dtype=torch.float16)
+    q_attn_arg = torch.arange(q_len, device="mlu") // 64 % 4
+    k_attn_arg = torch.arange(k_len, device="mlu") // 64 % 4
+    cu_seqlens_q = torch.arange(batch_size + 1, device="mlu") * (q_len // batch_size)
+    cu_seqlens_k = torch.arange(batch_size + 1, device="mlu") * (k_len // batch_size)
 
     o = FlashAttentionFunc.apply(
         q,
