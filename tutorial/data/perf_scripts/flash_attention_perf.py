@@ -74,8 +74,7 @@ class flash_attention_performance_metrics(Performance_Metrics):
 
     def to_mlu(self, input_tuple):
         """搬运至加速器"""
-        # 你的环境可能是 CUDA 或 MLU，这里根据 context 自动选择
-        device = "cuda" if torch.cuda.is_available() else "mlu"
+        device = "mlu"
         tensors = [
             t.to(device) if isinstance(t, torch.Tensor) else t for t in input_tuple
         ]
@@ -89,10 +88,10 @@ class flash_attention_performance_metrics(Performance_Metrics):
         """调用 FlashAttentionFunc"""
         if self.is_backward:
             *args, do = input_tuple
-            o = FlashAttentionFunc.apply(*args)
+            o = flash_attention_wrapper_ref.apply(*args)
             return torch.autograd.backward(o, do, retain_graph=True)
         else:
-            return FlashAttentionFunc.apply(*input_tuple)
+            return flash_attention_wrapper_ref.apply(*input_tuple)
 
     def call_op_ref(self, input_tuple):
         """

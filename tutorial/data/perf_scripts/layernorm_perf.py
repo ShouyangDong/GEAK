@@ -20,8 +20,6 @@ import torch
 import triton
 import triton.language as tl
 
-# 假设 LayerNorm 类（继承自 torch.autograd.Function）已在上下文中定义
-
 
 class layernorm_performance_metrics(Performance_Metrics):
     def __init__(self, dtype=torch.float16, is_backward=False, **kwargs):
@@ -54,13 +52,12 @@ class layernorm_performance_metrics(Performance_Metrics):
 
     def to_mlu(self, input_tuple):
         """将张量搬运至加速器并设置梯度追踪"""
-        device = "mlu" if torch.mlu.is_available() else "cuda"
+        device = "mlu"
         tensors = [
             t.to(device) if isinstance(t, torch.Tensor) else t for t in input_tuple
         ]
 
         if self.is_backward:
-            # x, weight, bias 需要梯度
             tensors[0].requires_grad_()  # x
             tensors[2].requires_grad_()  # weight
             tensors[3].requires_grad_()  # bias
@@ -70,11 +67,10 @@ class layernorm_performance_metrics(Performance_Metrics):
         """调用 Triton 实现的 LayerNorm"""
         if self.is_backward:
             *args, dy = input_tuple
-            y = LayerNorm.apply(*args)
-            # 反向传播测量：测量从 y.backward 到梯度写回的全过程
+            y = layernorm_wrapper_ref.apply(*args)
             return y.backward(dy, retain_graph=True)
         else:
-            return LayerNorm.apply(*input_tuple)
+            return layernorm_wrapper_ref.apply(*input_tuple)
 
     def call_op_ref(self, input_tuple):
         """参考实现：使用 PyTorch 原生的 F.layer_norm"""
@@ -95,14 +91,8 @@ class layernorm_performance_metrics(Performance_Metrics):
         element_size = x.element_size()
 
         if not self.is_backward:
-            # 前向访存：读(x, w, b) + 写(y, mean, rstd)
-            # w, b 是向量，相对于 x 的量级可以忽略不计
-            # 实际上 Triton 版写回了 mean 和 rstd (各 M 个 float32)
             total_bytes = (M * N * 2 * element_size) + (M * 2 * 4)
         else:
-            # 反向访存：
-            # 读 (dy, x, w, m, v) -> 3*M*N + 2*M
-            # 写 (dx, dw, db) -> M*N + 2*N
             total_bytes = (
                 (M * N * 4 * element_size) + (M * 2 * 4) + (N * 2 * element_size)
             )
@@ -122,11 +112,8 @@ class layernorm_performance_metrics(Performance_Metrics):
         return flops / (runtime / 1000) / 1e12
 
 
-# 运行测试
 if __name__ == "__main__":
-    # 针对反向传播进行性能分析
     bwd_perf = layernorm_performance_metrics(is_backward=True)
     bwd_perf.get_input_tensors()
-    # 增加 Repetition 次数以平滑原子操作带来的抖动
     bwd_perf.get_do_bench_config(warmup=50, rep=200)
     bwd_perf.run_benchmark()

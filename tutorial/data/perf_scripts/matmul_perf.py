@@ -50,7 +50,7 @@ class matmul_performance_metrics(Performance_Metrics):
 
     def to_mlu(self, input_tuple):
         """搬运至加速器并确保连续性（Kernel 要求）"""
-        device = "mlu" if torch.mlu.is_available() else "cuda"
+        device = "mlu"
         # Matmul Kernel 显式要求输入连续
         tensors = [
             t.to(device).contiguous() if isinstance(t, torch.Tensor) else t
@@ -66,10 +66,10 @@ class matmul_performance_metrics(Performance_Metrics):
         """调用 Triton Matmul"""
         if self.is_backward:
             *args, do = input_tuple
-            res = matmul(*args)
+            res = matmul_wrapper_ref(*args)
             return res.backward(do, retain_graph=True)
         else:
-            return matmul(*input_tuple)
+            return matmul_wrapper_ref(*input_tuple)
 
     def call_op_ref(self, input_tuple):
         """参考实现：PyTorch 原生调用 (通常调用 cuBLAS/cnBLAS)"""
@@ -97,7 +97,6 @@ class matmul_performance_metrics(Performance_Metrics):
 
         flops = 2 * M * N * K
         if self.is_backward:
-            # 矩阵乘法反向传播包含两个矩阵乘法 (dA = dC @ B^T, dB = A^T @ dC)
             flops *= 2
 
         return flops / (runtime / 1000) / 1e12
@@ -117,9 +116,7 @@ class matmul_performance_metrics(Performance_Metrics):
 
 
 if __name__ == "__main__":
-    # 执行性能评测
     perf = matmul_performance_metrics(is_backward=False)
     perf.get_input_tensors()
-    # Matmul 运行较快，建议 rep 设置大一些以获得稳定值
     perf.get_do_bench_config(warmup=50, rep=200)
     perf.run_benchmark()

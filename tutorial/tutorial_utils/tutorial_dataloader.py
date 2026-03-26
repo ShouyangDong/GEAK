@@ -22,38 +22,40 @@ INSTRUCTIONS_FILE = os.path.join(TUTORIAL_DIR, "data", "instructions.json")
 import re
 import ast
 
+
 def process_code(code):
     # 1. 清理 Markdown 外壳和 LLM 停止符
     if "```python" in code:
         code = code.split("```python")[-1].split("```")[0]
     code = code.replace("<|im_end|>", "").replace("<|EOT|>", "")
-    
+
     # 2. 致命错误抢救 A：清理 \xa0 (NBSP)
-    code = code.replace('\xa0', ' ')
+    code = code.replace("\xa0", " ")
 
     # 3. 致命错误抢救 B：修复“少了空格”
     # 注意：这里我们使用了 (?!sert) 负向先行断言，防止把 assert 拆开
     # 同时加入了针对 @ 的换行处理
-    keywords = r'import|from|def|class|for|return|if|elif'
-    code = re.sub(rf'\b({keywords})(?=[a-zA-Z])', r'\1 ', code)
+    keywords = r"import|from|def|class|for|return|if|elif"
+    code = re.sub(rf"\b({keywords})(?=[a-zA-Z])", r"\1 ", code)
     # 专门处理 as，排除 assert 和 async
-    code = re.sub(r'\bas(?=[a-zA-Z])(?!(sert|ync))', r'as ', code)
+    code = re.sub(r"\bas(?=[a-zA-Z])(?!(sert|ync))", r"as ", code)
 
     # 4. 致命错误抢救 C：强制拆解“一行流”
     # 核心修复：增加对 @ 装饰器的匹配，并确保它前面有换行
     # 这里的正则 (?<!\n)\s*(@\w+) 表示：如果 @ 装饰器前面不是换行符，就强制换行
-    code = re.sub(r'(?<!\n)\b(import\s+|from\s+|def\s+|class\s+)', r'\n\1', code)
-    code = re.sub(r'(?<!\n)\s*(@[a-zA-Z_][a-zA-Z0-9_\.]*)', r'\n\1', code)
-    
+    code = re.sub(r"(?<!\n)\b(import\s+|from\s+|def\s+|class\s+)", r"\n\1", code)
+    code = re.sub(r"(?<!\n)\s*(@[a-zA-Z_][a-zA-Z0-9_\.]*)", r"\n\1", code)
+
     # 5. 处理连续空格代替换行的问题
     def space_to_newline(match):
-        return '\n' + match.group(0)
-    code = re.sub(r' {3,}', space_to_newline, code)
+        return "\n" + match.group(0)
+
+    code = re.sub(r" {3,}", space_to_newline, code)
 
     try:
         # 6. AST 解析与重组
         tree = ast.parse(code)
-        
+
         imports = []
         functions = []
 
@@ -66,7 +68,7 @@ def process_code(code):
         return "\n".join(imports) + "\n\n" + "\n\n".join(functions)
 
     except SyntaxError as e:
-        error_line = code.split('\n')[e.lineno - 1] if e.lineno else "未知"
+        error_line = code.split("\n")[e.lineno - 1] if e.lineno else "未知"
         print(f"❌ AST 解析彻底失败: 第 {e.lineno} 行 -> {e.msg}")
         print(f"❌ 导致崩溃的代码片段: {error_line.strip()}")
         return code.strip()

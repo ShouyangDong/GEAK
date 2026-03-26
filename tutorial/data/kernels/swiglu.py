@@ -626,12 +626,12 @@ class FusedSwiglu(torch.autograd.Function):
 def test_swiglu_triton():
     results = {}
     dtype = torch.bfloat16
-    x = torch.randn((220000, 512), dtype=dtype, device="cuda").requires_grad_()
-    w_g = torch.randn((512, 1024), dtype=dtype, device="cuda").requires_grad_()
-    w_fc = torch.randn((512, 1024), dtype=dtype, device="cuda").requires_grad_()
-    b_g = torch.randn((1024), dtype=dtype, device="cuda").requires_grad_()
-    b_fc = torch.randn((1024), dtype=dtype, device="cuda").requires_grad_()
-    dy = torch.randn((220000, 1024), dtype=dtype, device="cuda")
+    x = torch.randn((220000, 512), dtype=dtype, device="mlu").requires_grad_()
+    w_g = torch.randn((512, 1024), dtype=dtype, device="mlu").requires_grad_()
+    w_fc = torch.randn((512, 1024), dtype=dtype, device="mlu").requires_grad_()
+    b_g = torch.randn((1024), dtype=dtype, device="mlu").requires_grad_()
+    b_fc = torch.randn((1024), dtype=dtype, device="mlu").requires_grad_()
+    dy = torch.randn((220000, 1024), dtype=dtype, device="mlu")
     y = FusedSwiglu.apply(x, w_g, w_fc, b_g, b_fc, True, False)
     y.backward(dy)
     triton_dx, x.grad = x.grad.clone(), None
