@@ -1,10 +1,3 @@
-# https://github.com/triton-lang/triton/blob/release/3.2.x/python/tutorials/02-fused-softmax.py
-# 主要修改有:
-# 1. 通过字符替换，将 cuda 全局替换成 mlu。
-# 2. x_vals=[128 * i for i in range(2, 100)] 改成 x_vals = [1024]。
-# 3. get_device_properties和MLU定义有些不一样，这部分需要额外修改，后续版本会补充这部分properities，保证社区代码尽可能少的修改可以跑功能。
-#    它的precompile的逻辑依赖这些属性，这些在mlu下很多都不一样，这块逻辑需要修改。
-
 import torch
 
 import triton

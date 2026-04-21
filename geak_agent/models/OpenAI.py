@@ -11,7 +11,8 @@ class StandardOpenAIModel(BaseModel):
     """Standard OpenAI API (api.openai.com)"""
 
     def __init__(self, model_id="gpt-4", api_key=None):
-        assert api_key is not None, "no api key is provided."
+        #assert api_key is not None, "no api key is provided."
+
         self.model_id = model_id
         self.client = AzureOpenAI(
             api_version="2024-12-01-preview",

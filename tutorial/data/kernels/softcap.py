@@ -4,31 +4,13 @@ import triton.language as tl
 from maybe_triton_jit import maybe_triton_jit
 from triton.language.extra import libdevice
 
-# from .utils import is_hopper, is_ampere, is_mlu590
-
 
 def get_fwd_config():
     return [triton.Config({"BLOCK_SIZE": 2048}, num_stages=1, num_warps=1)]
-    if is_hopper():
-        return [triton.Config({"BLOCK_SIZE": 2048}, num_stages=2, num_warps=4)]
-    elif is_ampere():
-        return [triton.Config({"BLOCK_SIZE": 2048}, num_stages=4, num_warps=8)]
-    elif is_mlu590():
-        return [triton.Config({"BLOCK_SIZE": 2048}, num_stages=1, num_warps=1)]
-    else:
-        return [triton.Config({"BLOCK_SIZE": 2048}, num_stages=2, num_warps=16)]
 
 
 def get_bwd_config():
     return [triton.Config({"BLOCK_SIZE": 8192}, num_stages=3, num_warps=1)]
-    if is_hopper():
-        return [triton.Config({"BLOCK_SIZE": 2048}, num_stages=4, num_warps=4)]
-    elif is_ampere():
-        return [triton.Config({"BLOCK_SIZE": 2048}, num_stages=3, num_warps=8)]
-    elif is_mlu590():
-        return [triton.Config({"BLOCK_SIZE": 8192}, num_stages=3, num_warps=1)]
-    else:
-        return [triton.Config({"BLOCK_SIZE": 512}, num_stages=2, num_warps=8)]
 
 
 @maybe_triton_jit(

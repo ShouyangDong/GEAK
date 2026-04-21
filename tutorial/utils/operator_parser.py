@@ -82,7 +82,9 @@ def parse_code_to_metadata(code: str) -> Dict[str, Any]:
                     # kernel[(...)](...) style
                     kernel_name = _node_to_name(sub.func.value)
                     called.add(kernel_name)
-                elif isinstance(sub, ast.Call) and isinstance(sub.func, (ast.Name, ast.Attribute)):
+                elif isinstance(sub, ast.Call) and isinstance(
+                    sub.func, (ast.Name, ast.Attribute)
+                ):
                     # sometimes kernel may be called directly
                     name = _node_to_name(sub.func)
                     if name in kernel_names:
@@ -102,9 +104,11 @@ def parse_code_to_metadata(code: str) -> Dict[str, Any]:
     }
 
 
-def update_operator_dict(file_name: str,
-                         instructions_json: str = "/Users/dongshouyang/Downloads/GEAK/tutorial/data/instructions.json",
-                         out_json: str = "/Users/dongshouyang/Downloads/GEAK/tutorial/data/operators.json") -> Dict[str, Any]:
+def update_operator_dict(
+    file_name: str,
+    instructions_json: str = "/Users/dongshouyang/Downloads/GEAK/tutorial/data/instructions.json",
+    out_json: str = "/Users/dongshouyang/Downloads/GEAK/tutorial/data/operators.json",
+) -> Dict[str, Any]:
     """Load the instructions file, find the entry for `file_name`, parse the code, and update operators.json.
 
     Returns the written operator dict for the file.
@@ -118,12 +122,17 @@ def update_operator_dict(file_name: str,
     entry = None
     # match by exact filename or by basename
     for e in entries:
-        if e.get("file") == file_name or os.path.basename(e.get("file", "")) == file_name:
+        if (
+            e.get("file") == file_name
+            or os.path.basename(e.get("file", "")) == file_name
+        ):
             entry = e
             break
 
     if entry is None:
-        raise ValueError(f"No instruction entry found for file '{file_name}' in {instructions_json}")
+        raise ValueError(
+            f"No instruction entry found for file '{file_name}' in {instructions_json}"
+        )
 
     code = entry.get("output", "")
     metadata = parse_code_to_metadata(code)
@@ -155,13 +164,28 @@ def update_operator_dict(file_name: str,
 
 
 def _cli_main():
-    p = argparse.ArgumentParser(description="Parse instruction entry and update operators.json")
-    p.add_argument("--file", "-f", required=True, help="file name in instructions.json (e.g. add_example.py)")
-    p.add_argument("--instructions", default="/Users/dongshouyang/Downloads/GEAK/tutorial/data/instructions.json")
-    p.add_argument("--out", default="/Users/dongshouyang/Downloads/GEAK/tutorial/data/operators.json")
+    p = argparse.ArgumentParser(
+        description="Parse instruction entry and update operators.json"
+    )
+    p.add_argument(
+        "--file",
+        "-f",
+        required=True,
+        help="file name in instructions.json (e.g. add_example.py)",
+    )
+    p.add_argument(
+        "--instructions",
+        default="/Users/dongshouyang/Downloads/GEAK/tutorial/data/instructions.json",
+    )
+    p.add_argument(
+        "--out",
+        default="/Users/dongshouyang/Downloads/GEAK/tutorial/data/operators.json",
+    )
     args = p.parse_args()
 
-    rec = update_operator_dict(args.file, instructions_json=args.instructions, out_json=args.out)
+    rec = update_operator_dict(
+        args.file, instructions_json=args.instructions, out_json=args.out
+    )
     print("Updated operator entry for:", rec["file"])
 
 
@@ -196,10 +220,12 @@ def parse_kernel_file(kernel_path: str) -> str:
     return "".join(lines)
 
 
-def generate_instruction_from_kernel(kernel_file: str,
-                                     kernel_dir: str = "/Users/dongshouyang/Downloads/GEAK/tutorial/data/kernels",
-                                     out_instructions: str = "/Users/dongshouyang/Downloads/GEAK/tutorial/data/generated_instructions.json",
-                                     difficulty: str = "3") -> Dict[str, Any]:
+def generate_instruction_from_kernel(
+    kernel_file: str,
+    kernel_dir: str = "/Users/dongshouyang/Downloads/GEAK/tutorial/data/kernels",
+    out_instructions: str = "/Users/dongshouyang/Downloads/GEAK/tutorial/data/generated_instructions.json",
+    difficulty: str = "3",
+) -> Dict[str, Any]:
     """Create an instructions.json-style entry from a kernel file.
 
     The entry will include `instruction` (auto message), empty `input`, `output` containing the code
@@ -253,23 +279,37 @@ def generate_instruction_from_kernel(kernel_file: str,
 
 
 def _cli_main_extra():
-    p = argparse.ArgumentParser(description="Generate instruction entry from a kernel file")
-    p.add_argument("--kernel-file", "-k", required=False, help="path or basename of kernel file under tutorial/data/kernels")
-    p.add_argument("--out", default="/Users/dongshouyang/Downloads/GEAK/tutorial/data/generated_instructions.json")
+    p = argparse.ArgumentParser(
+        description="Generate instruction entry from a kernel file"
+    )
+    p.add_argument(
+        "--kernel-file",
+        "-k",
+        required=False,
+        help="path or basename of kernel file under tutorial/data/kernels",
+    )
+    p.add_argument(
+        "--out",
+        default="/Users/dongshouyang/Downloads/GEAK/tutorial/data/generated_instructions.json",
+    )
     p.add_argument("--difficulty", default="3")
     args = p.parse_args()
     if not args.kernel_file:
-        print("Please pass --kernel-file to generate an instruction entry from a kernel file.")
+        print(
+            "Please pass --kernel-file to generate an instruction entry from a kernel file."
+        )
         return
-    rec = generate_instruction_from_kernel(args.kernel_file, out_instructions=args.out, difficulty=args.difficulty)
-    print("Generated instruction for:", rec["file"]) 
+    rec = generate_instruction_from_kernel(
+        args.kernel_file, out_instructions=args.out, difficulty=args.difficulty
+    )
+    print("Generated instruction for:", rec["file"])
 
 
 if __name__ == "__main__":
     # If called directly with --kernel-file use the extra CLI, otherwise keep previous behavior
     import sys
+
     if "--kernel-file" in sys.argv or "-k" in sys.argv:
         _cli_main_extra()
     else:
         _cli_main()
-
